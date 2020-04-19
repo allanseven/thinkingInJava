@@ -1,0 +1,134 @@
+第14章 类型信息
+
+14.1 为什么需要RTTI
+		1-RTTI含义：在运行时，识别一个对象的类型
+		2-RTTI形式：
+			 1.传统的类型转换:(shape)
+			 2.代表对象的类型的class对象
+			 3.instanceof返回一个布尔值，判断是否是某个特定的类型
+		
+14.2 Class对象
+		1-Class对象包含与类有关的信息，用来创建常规对象
+		2-Java使用Class对象来执行RTTI
+		3-Class.forName(String className)全路径的类名，获取对象引用
+		  Class.newInstance调用默认构造函数生成对象
+		  Class.getName获取对象的全路径的类名
+		  Class.isInterface判断是否是接口
+		  Class.getSimpleName获取类名
+		  Class.getCanonicalName获取对象的全路径的类名
+		  Class.getInterfaces获取类所实现的接口
+		  Class.getSuperclass返回基类对象的引用
+		4-类的三个步骤：
+			 1.加载：类加载器创建一个class对象
+			 2.链接:验证字节码，分配静态空间
+			 3.初始化：对基类进行初始化，执行静态初始化器和静态初始化块
+		5-类字面常量
+		     1.类.class
+			 2.类字面常量也可以用于接口，数组，基本数据类型
+			 3.对于基本数据类型的包装器类，还有一个标准字段TYPE
+			      int.class == Integer.TYPE
+		     4.使用类字面常量创建对象引用，不会自动初始化该对象
+			   当首次对静态域进行引用时才初始化
+			 5.static final编译器常量，并不一定是--随机
+			   非final的static，先链接静态空间，再初始化静态空间
+		6-泛化的Class引用
+			 1.使用通配符：  <?>  表示任何事物
+			 2.为何使用泛型化语法：为了在编译器提供检查
+			 3.class FilledList<T>与它一起工作的类必须有默认构造器，否则异常
+			   private Class<T> type;
+			   public FilledList(Class<T> type) { this.type = type; }
+			 4.Class<? super FancyToy> up = ftClass.getSuperclass();
+			   ? super FancyToy：FancyToy的基类
+		7-新的转型语法
+			 1.T cast​(Object obj)将对象强制转换为此Class对象表示的类或接口。
+			 
+14.3 类型转换前先做检查
+		1-@SuppressWarnings("unchecked")不能使用在static域上
+		2-instanceof通过返回一个布尔值来指出，这个对象是否是这个特定类或者是它的子类的一个实例。
+		3-使用类字面常量
+		     1.动态的instanceof
+		4-使用动态的public native boolean isInstance(Object obj);判断类型
+		5-递归计数
+		     1.boolean isAssignableFrom​(Class<?> cls)	
+				--确定此Class对象表示的类或接口是否与指定Class参数表示的类或接口相同或超类或超接口 
+		
+14.4 注册工厂
+		1-通过一个注册工厂基类中的集合容器在静态域中添加子类对象以及生成对象的工厂方法，
+		  通过多态的方式，动态的指定对象
+		2-并非所在的继承结构中的类都应该被实例化--分类标识
+		3-Collections.addAll​(Collection<? super T> c, T... elements)会抛创建泛型数组警告
+		
+14.5 instanceof与Class的等价性
+		1-instanceof和isInstance生成的结果一致
+		2-==和equals也一样
+		
+14.6 反射：运行时的类信息	
+		1-基于构件编程--Java通过JavaBeans提供了基于构件的编程架构
+		2-Class类和java.lang.reflect类库为反射提供支持
+			 1.通过反射获取构造方法并使用--Constructor
+			 2.通过反射获取成员变量并使用--Field
+			 3.通过反射获取成员方法并使用--Method
+		3-RTTI和反射的区别
+			 1.RTTI在编译时打开和检查.class文件
+			 2.反射在运行时打开和检查.class文件
+		4-类方法提取器
+			 1.Class<?> c = Class.forName(args[0]);//生成的结果在编译时是不可知的
+			   Method[] methods = c.getMethods();
+			   Constructor[] ctors = c.getConstructors();
+		
+14.7 动态代理	
+		1-动态代理：提供额外或不同的操作，插入用来实际对象的对象
+		2-在Java中java.lang.reflect包下提供了一个Proxy类和一个InvocationHandler函数式接口，
+		  通过使用这个类和接口就可以生成动态代理对象。
+		  JDK提供的代理只能针对接口做代理。
+		3-Object Proxy.newProxyInstancestatic(ClassLoader loader, Class<?>[] interfaces, InvocationHandler h)
+			 --创建动态代理
+		4-动态代理可以将所有的调用重定向到调用处理器
+			 1.public Object invoke(Object proxy, Method method, Object[] args)throws Throwable;--InvocationHandler方法
+			 2.method是调用的方法，即需要执行的方法；args是方法的参数；proxy参数传递的即是代理类的实例。
+			 3.还代理了java的根类Object中的继承而来的equals()、hashcode()、toString()这三个方法，并且仅此三个方法。
+			 4.@Override
+				  public final boolean equals(Object obj) { 
+					try { 
+					  return ((Boolean) super.h.invoke(this, m1, new Object[] { obj })) .booleanValue(); 
+					} catch (Throwable throwable) { 
+					  throw new UndeclaredThrowableException(throwable); 
+					} 
+				  } 
+			 5.@Override
+				  public final int hashCode() { 
+					try { 
+					  return ((Integer) super.h.invoke(this, m0, null)).intValue(); 
+					} catch (Throwable throwable) { 
+					  throw new UndeclaredThrowableException(throwable); 
+					} 
+				  } 
+			 6.@Override
+				  public final String toString() { 
+					try { 
+					  return (String) super.h.invoke(this, m2, null); //调用invoke方法
+					} catch (Throwable throwable) { 
+					  throw new UndeclaredThrowableException(throwable); 
+					} 
+				  } 		
+14.8 空对象与null
+		1-空对象的思想：通过内部的形式定义一个调用外部类构造的空对象
+		2-空对象都是单例：public static final Person NULL = new NullPerson();
+		3-模拟对象与桩
+			 1.空对象的逻辑变体是模拟对象与桩
+			 2.模拟对象--轻量级--测试
+			 3.桩--重量级--测试复用
+		
+14.9 接口与类型信息
+		1-接口重要目标是隔离构件，降低耦合度
+		2-通过反射可以获取类信息，无论将接口实现为私有内部类或匿名类
+		3-final无法通过反射修改
+		
+14.10 总结
+
+
+
+
+
+
+

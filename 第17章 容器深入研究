@@ -1,0 +1,288 @@
+第17章 容器深入研究
+
+17.1 完整的容器分类法
+		1-接口：Iterator, Collection, Map, Queue
+		
+17.2 填充容器
+		1-Collections.fill(List<? super T> list, T obj)
+			 --复制同一个对象引用，只对List对象有用
+			 --但是产生的列表可以传递给构造器或addAll()方法
+		2-Collections.nCopies(int n, T o)
+			 --只能替换，不能添加
+		3-一种Generator解决方案
+			 1.适配器设计模式：class CollectionData<T> extends ArrayList<T> {
+			 2.构造器接受Generator接口public CollectionData(Generator<T> gen, int quantity) {
+			 3.一个实现Generator接口的类
+		4-LinkedHashSet保持了插入顺序相同
+		5-Map生成器
+			 1.class MapData<K,V> extends LinkedHashMap<K,V> {
+			 2.public MapData(Generator<Pair<K,V>> gen, int quantity) {
+			 3.public MapData(Iterable<K> genK, Generator<V> genV) {
+			 4.对应的泛型便利方法可以减少在使用类时，所必须的类型检查数量
+			    public static <K,V> MapData<K,V> map(Generator<Pair<K,V>> gen, int quantity) {
+					return new MapData<K,V>(gen, quantity);
+				  }
+		6-使用abstract类
+			 1.设计模式：享元
+			 2.为了创建只读的Map，可以继承AbstractMap并实现entrySet(),
+			   创建只读的Set,可以继承AbstractSet并实现iterator()和size();
+			 
+17.3 Collection的功能方法
+		1-添加功能: boolean add(Object obj)--添加一个元素
+					boolean addAll(Collection c)--添加一个集合的元素
+		2-删除功能: void clear()--移除所有的元素
+					boolean remove(Object o)--移除一个元素
+					boolean removeAll(Collection c)--移除一个集合的元素
+		3-判断功能: boolean contains(Object o)--判断集合中是否包含指定的元素
+					boolean containsAll​(Collection<?> c)--判断集合中是否包含指定的集合元素(必须包含所有元素)
+					boolean isEmpty()--判断集合是否为空
+		4-获取功能: Iterator<E> iterator()--迭代器，集合专用的遍历方式
+					Object next()方法--获取下一个元素
+					boolean hasNest()--如果仍有元素可以迭代，返回true
+		5-长度功能: int size()--元素的个数
+			
+		6-交集: boolean retainAll(Collection c)--仅保留此集合中包含在指定集合中的元素，两个集合都有的元素
+				 特殊情况：list1和list2两个集合完全相同，所以list1和list2的交集就是他们本身，
+				 把交集赋给list1时，list1没有发生任何的变化，所以返回false。
+				 
+				 返回的boolean表示集合是否有改变
+				 假设A，B两个集合
+				 A对B做交集，最终结果保存在A中，B不变
+				 返回值表示的是A是否有改变
+			
+		7-集合转数组: Object[] toArray()
+		  数组转集合: Arrays工具类的asList​(T... a)--返回由指定数组支持的固定大小的列表。
+				  --注意：这个集合的长度不能改变。
+		
+17.4 可选操作
+		1-执行各种不同的添加和移除的方法在Collection接口中都是可选操作
+		2-未获支持的操作
+			 1.Arrays.asList(T... a)基于一个固定大小的数组，仅支持不改变容器大小的方法
+			   可把结果传递给其他容器当参数，产生普通的容器
+			 2.Collections的不可修改方法
+				Collections.unmodifiableList产生不可修改的列表
+		3-List.set()--修改List容器中的元素，
+			 在Arrays.asList可以，Collections.unmodifiableList中不可以
+		
+17.5 List的功能方法
+		1-List的方法：
+			 add，addAll，contains，containsAll，get，indexOf，isEmpty，iterator，listIterator
+			 lastIndexOf，remove，set，retainAll，removeAll，size，clear
+		2-listIterator的方法：
+			 hasNext()，hasPrevious()，next()，nextIndex()，previous()，previousIndex()
+		
+17.6 Set和存储顺序
+		1-Set: 加入set元素必须定义equals()方法确定对象的唯一性
+		  HashSet：快速查找，必须定义hashCode()
+		  TreeSet: 树结构，有序，元素必须实现Comparable接口
+		  LinkedHashSet：快速查找，链表维护插入顺序，必须定义hashCode()
+		2-覆盖equals()，最好同时覆盖hashCode()
+		3-SortedSet的方法：
+			 1.E first()--返回当前在此集合中的第一个（最低）元素。
+			 2.E last()--返回当前在此集合中的最后一个（最高）元素。
+			 3.SortedSet<E> subSet(E fromElement, E toElement)
+				 --返回此集合部分的视图，其元素的范围从fromElement-包括，到toElement-不包括。
+			 4.SortedSet<E> headSet(E toElement)--返回此集合中元素小于toElement的元素视图。
+			 5.SortedSet<E> tailSet(E fromElement)--返回此集合中元素大于或等于的部分的视图fromElement。
+17.7 队列
+		1-Queue队列的具体实现：LinkedList和PriorityQueue
+			 1.ArrayBlockingQueue
+			 2.ConcurrentLinkedQueue
+			 3.LinkedBlockingQueue
+			 4.PriorityBlockingQueue
+		2-优先级队列
+			 1.class ToDoList extends PriorityQueue<ToDoList.ToDoItem>
+			 2.内部类static class ToDoItem implements Comparable<ToDoItem>
+			 3.在compareTo中设置多个字段的优先级
+		3-双向队列
+			 1.可以在任何一端添加或移除元素
+			 2.Java库中没有双向列表的接口，可通过组合创建一个Deque类
+				 public class Deque<T> {
+				  private LinkedList<T> deque = new LinkedList<T>();
+				  
+				  public void addFirst(T e) { deque.addFirst(e); }
+				  public void addLast(T e) { deque.addLast(e); }
+				  public T getFirst() { return deque.getFirst(); }
+				  public T getLast() { return deque.getLast(); }
+				  public T removeFirst() { return deque.removeFirst(); }
+				  public T removeLast() { return deque.removeLast(); }
+				  public int size() { return deque.size(); }
+				  public String toString() { return deque.toString(); }
+				1.6版本添加接口: public interface Deque<E> extends Queue<E> 
+			 3.LinkedList中包含支持双向队列的方法
+17.8 理解Map
+		1-Map的常见实现：
+			 1.HashMap:基于散列表的实现
+			 2.LinkedHashMap：取得键值对的顺序是插入顺序，比HashMap慢
+			 3.TreeMap：基于红黑树的实现，得到的结果经过排序，subMap(K fromKey, boolean fromInclusive,
+                 K toKey,   boolean toInclusive)返回一个子树return new AscendingSubMap
+			 4.WeakHashMap：弱键映射，允许释放映射所指向的对象
+			 5.ConcurrentHashMap：线程安全的Map，不涉及同步加锁
+			 6.IdentityHashMap：使用==替代equals()对键进行比较
+			 关联数组的基本方法是put和get方法
+		2-性能
+			 1.HashMap使用散列码HashCode()取代线性搜索
+			 2.散列是映射中存储元素时最常用的方式
+			 3.对Map中使用的键的要求根Set中的元素一样
+				 任何键必须有equals()方法；
+				 键被用于散列Map需要HashCode()
+				 键用于TreeMap，必须实现Comparable
+		3-SortedMap
+			 1.TreeMap是SortedMap接口的唯一实现：使键处于排序状态
+			 2.SortedMap方法：
+				 Comparator<? super K> comparator()--返回用于在此映射中排序键的比较器，或者null
+				 K firstKey()--返回此映射中当前的第一个（最低）键。
+				 K lastKey()--返回此映射中当前的最后一个（最高）键。
+				 SortedMap<K,​V>	subMap​(K fromKey, K toKey)--返回此地图部分的视图，其键范围为fromKey-包括到toKey-不包括。
+				 SortedMap<K,​V>	headMap​(K toKey)--返回Map的子集，由键小于toKey的所有键值对组成。
+				 SortedMap<K,​V>	tailMap​(K fromKey)--返回Map的子集，由键大于或等于fromKey的所有键值对组成。
+			 3.LinkedHashMap
+				 1.基于访问的最近最少使用算法--没有被访问过的元素出现在队列前面
+				 2.最后一次访问的元素在最后
+17.9 散列与散列码
+		1-使用自己的类作为HashMap的键，必须同时重载HashCode()和equals()
+		2-理解hashCode()
+			 1.使用散列的目的：使用一个对象来查找另一个对象
+		3-为速度而散列
+			 1.把键的信息保存在数组中
+			 2.数组并不保存键本身，通过键对象生成一个数字，将其作为数组的下标--这个数字就是散列码
+			 3.解决数组容量固定问题：不同的键可以产生相同的下标
+			 4.数组并不直接保存值，而是保存值的List
+			 5.散列表中的槽位称为桶位--bucket，桶的数量使用质数--使用2的整数次方
+			 6.为自动处理冲突，使用LinkedList的数组
+		4-覆盖hashCode()
+			 1.无法控制bucket数组的下标值的产生，该值依赖于具体的HashMap对象的容量--容器的充满程度和负载因子
+			 2.对同一个对象调用hashCode()都应该生成同样的值
+			 3.不应该使hashCode()依赖于具有唯一性的对象信息，尤其是this值
+			 4.hashCode()实用：必须速度快，有意义--基于对象的内容生成散列码
+			 5.好的hashCode()应该产生分布均匀的散列码
+			 6.标准hashCode()生成：
+				 给int变量result赋予非零的常量
+				 为对象内每个有意义的域f(可以做equals()操作的域)计算出一个int散列码c
+				 合并计算得到的散列码，并返回result= 37 * result + c;
+				public int hashCode() {
+					// The very simple approach:
+					// return s.hashCode() * id;
+					// Using Joshua Bloch's recipe:
+					int result = 17;
+					result = 37 * result + s.hashCode();
+					result = 37 * result + id;
+					return result;
+				  }
+				public boolean equals(Object o) {
+					return o instanceof CountedString &&
+					  s.equals(((CountedString)o).s) &&
+					  id == ((CountedString)o).id;
+				  } 
+17.10 选择接口的不同实现
+		1-容器之间的区别：所使用的接口又什么数据结构实现
+		2-性能测试框架
+			 1.横板方法设计模式
+		3-对List的选择
+			 1.ArrayList:底层数据结构是数组，查询快，增删慢
+			 2.LinkedList:底层数据结构是链表，查询慢，增删快								
+		4-微基准测试的危害
+			 Math.random()
+		5-对Set的选择
+			 1.TreeSet：排序
+			 2.HashSet：添加，查询块
+				 LinkedHashSet：插入操作比HashSet代价高
+		6-对Map的选择
+			 1.除IdentityHashMap，所有的Map实现的插入操作都会随着Map尺寸的变大而明显变慢
+			 2.HashMap替代Hashtable
+			 3.TreeMap比HashMap慢，但有序
+			 4.LinkedHashMap比HashMap插入慢
+			 5.IdentityHashMap使用==而不是equals()比较元素
+		7-HashMap的性能因子
+			 1.容量：表中的桶位数
+			 2.初始容量：表在创建时，所拥有的桶位数
+			 3.尺寸：表中当前存储的项数
+			 4.负载因子：尺寸/容量。空表的负载因子是0，半满表的负载因子是0.5
+			   HashMap和HashSet都允许指定负载因子的构造器，表示当负载情况到达负载因子的水平时，自动增加其容量--再散列
+			   HashMap负载因子0.75，更高的负载因子可以降低表所需要的空间，但会增加查找代价
+			 5.创建一个具有恰当初始容量的容器，可以避免再散列
+17.11 实用方法--Collections工具类
+		1-Collections的静态方法：
+			 1.boolean	disjoint​(Collection<?> c1, Collection<?> c2)：如果两个指定的集合没有共同的元素返回true
+			 2.<T> List<T>	singletonList​(T o)：返回仅包含指定对象的不可变列表。
+			 3.<T extends Object & Comparable<? super T>> T max(Collection<? extends T> coll)：
+															--根据其元素的自然顺序返回给定集合的最大元素。
+			 4.<T extends Object & Comparable<? super T>> T min(Collection<? extends T> coll)
+															--根据其元素的自然顺序返回给定集合的最小元素。
+			 5.int indexOfSubList(List<?> source, List<?> target)：返回指定目标列表在指定源列表中第一次出现的起始位置，
+																   如果没有出现，则返回-1。
+			 6.int lastIndexOfSubList(List<?> source, List<?> target)：返回指定源列表中指定目标列表的最后一次出现的起始位置，
+																	   如果没有出现，则返回-1。
+		     7.<T> boolean replaceAll(List<T> list, T oldVal, T newVal)：将列表中所有出现的一个指定值替换为另一个。
+			 8.void reverse(List<?> list)：反转指定列表中元素的顺序。
+			 9.void rotate(List<?> list, int distance)：将指定列表中的元素旋转指定距离。
+			 10.<T> void copy(List<? super T> dest, List<? extends T> src): 将所有元素从一个列表复制到另一个列表。会替换相同个数的元素
+			 11.void swap(List<?> list, int i, int j)：在指定列表中的指定位置交换元素。
+			 12.void shuffle(List<?> list, Random rnd): 使用指定的随机性源随机排列指定的列表。
+			 13.<T> void fill(List<? super T> list, T obj)：将指定列表的所有元素替换为指定元素。
+			 14.int frequency(Collection<?> c, Object o)：返回指定集合中等于指定对象的元素数。
+			 15.<T> List<T> nCopies(int n, T o)：返回由n指定对象的副本组成的不可变列表
+			 16.<T> Enumeration<T> enumeration(final Collection<T> c)：返回指定集合的​​枚举。
+		2-List的排序和查询
+			 1.<T> void sort(List<T> list, Comparator<? super T> c)
+			 2.<T> int binarySearch(List<? extends T> list, T key, Comparator<? super T> c)
+			 3.排序和查询都使用相同的Comparator接口
+		3-设定Collection或Map为不可修改
+			 1.static Collection<String> data = new ArrayList<String>(Countries.names(6));
+			 2.Collection<String> c = Collections.unmodifiableCollection(new ArrayList<String>(data));
+			    List<String> a	= Collections.unmodifiableList(new ArrayList<String>(data));
+				Set<String> s = Collections.unmodifiableSet(new HashSet<String>(data));
+				Set<String> ss = Collections.unmodifiableSortedSet(new TreeSet<String>(data));
+				Map<String,String> m = Collections.unmodifiableMap(new HashMap<String,String>(Countries.capitals(6)));
+				Map<String,String> sm =Collections.unmodifiableSortedMap(new TreeMap<String,String>(Countries.capitals(6)));
+			 3.调用不可修改的方法之后，无法改变容器内容：add/put/retainAll
+		4-Collection或Map的同步控制
+			 1.Collection<String> c = Collections.synchronizedCollection(new ArrayList<String>());
+			 2.List<String> list = Collections.synchronizedList(new ArrayList<String>());
+			 3.Set<String> s = Collections.synchronizedSet(new HashSet<String>());
+			 4.Set<String> ss = Collections.synchronizedSortedSet(new TreeSet<String>());
+			 5.Map<String,String> m = Collections.synchronizedMap(new HashMap<String,String>());
+			 6.Map<String,String> sm = Collections.synchronizedSortedMap(new TreeMap<String,String>());
+		5-快速报错机制
+			 1.Java保护机制：防止多个进程同时修改同一个容器的内容
+			 2.如果其他进程修改了容器，报java.util.ConcurrentModificationException错误
+			 3.ConcurrentHashMap, CopyOnWriteArrayList和CopyOnWriteArraySet使用了可以避免ConcurrentModificationException错误的技术
+17.12 持有引用
+		1-三个继承自抽象类Reference：
+			 1.PhantomReference 弱--调度回收前的清理工作，比Java终止机制更灵活
+			 2.WeakReference    中--实现规范映射，它的对象实例可以在程序的多处被同时使用
+			 3.SoftReference    强--实现内存敏感的高速缓存
+		2-对象是可获得--是指此对象可在程序中的某处找到
+		3-通过使用Reference对象去包装引用，允许垃圾回收器释放它
+		4-PhantomReference必须依赖ReferenceQueue，其他两个可选
+		5-WeakHashMap
+			 1.用来保存WeakReference
+			 2.允许清理的条件：不再需要此键
+		
+17.13 Java1.0/1.1的容器
+		1-Vector和Enumeration
+			 1.Vector过时
+			 2.通过Vector的elements()方法生成Enumeration对象
+			   或<T> Enumeration<T> enumeration(final Collection<T> c)
+		2-Hashtable
+		3-Stack
+			 1.栈继承自Vector
+			 2.使用栈最好使用LinkedList
+		4-BigSet
+			 1.高效率存储开/关信息
+			 2.最小的容量是long：64位
+			 3.如果使用命名的固定的标志集合：EnumSet
+		
+17.14 总结
+
+
+
+
+
+
+
+
+
+
+
+

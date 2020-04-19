@@ -1,0 +1,137 @@
+第13章 字符串
+
+13.1 不可变 String
+		1-String对象是不可变的
+
+13.2 重载“+” 与 StringBuilder
+		1-重载“+”和+=可以连接String，编译器会自动引用StringBuilder来优化生成String
+		2-直接使用StringBuilder更简洁，只创建一个对象
+			 1.StringBuilder默认容器大小16
+			 2.StringBuilder​(int capacity)构造一个不带任何字符且capacity参数指定的初始容量的字符串生成器。
+		
+13.3 无意识的递归
+		1-在toString()中 字符串+this，产生递归调用，报错
+		2-如果要打印对象的内存地址：在toString()中调用super.toString()
+		
+13.4 String上的操作
+		1-当需要改变字符串的内容时，String类的方法都会返回一个新的String对象
+		2-如果没有改变，String类的方法只返回指向原对象的引用
+		
+13.5 格式化输出
+		1-printf("Row 1: [%d %f]\n", x, y)
+			 
+		2-System.out.format()
+			 1.System.out.format("Row 1: [%d %f]\n", x, y);
+			 2.System.out.printf("Row 1: [%d %f]\n", x, y);
+			 3.System.out.println("Row 1: [" + x + " " + y + "]");
+			 4.format和printf是等价的
+		3-Formatter类
+			 1.在Java中，所有新的格式化功能都由Formatter类处理
+			 2.输出到PrintStream outAlias = System.out;
+			 3.格式化说明符：
+			 %[argument_index$][flags][width][.precision]conversion
+			 argument_index$：argument_index 是一个十进制整数，
+			 用于表明参数在参数列表中的位置。第一个参数由 “1$” 引用，第二个参数由 “2$” 引用，依此类推。
+			 flags：可选 flags 是修改输出格式的字符集。有效标志集取决于转换类型。
+			 width：控制一个域的最小值，默认情况下下是右对齐的，可以通过使用“-”标志来改变对其方向。				 				 
+			 precision用于String，输出字符的最大数量
+				 用于浮点数，表示小数的位数，
+				 不可以用于整数，会异常
+			 conversion：转换格式，可选的格式有：
+				 d 整数型（十进制） c Unicode字符 b Boolean值 s String f 浮点数（十进制）
+				 e 浮点数（科学计数） x 整数（十六进制） h 散列码 % 字符串“%”
+			 注意当使用b作为转换格式时，即Boolean，对于boolean基本类型或者Boolean对象，其转换结果是对应的true或false。
+			 但是对于其他类型的参数，只要该参数不为null，那么该转换的结果就永远都是true。0也会转换为true的，跟其他语言有所区别。
+			 所以将b运用于非布尔类型要注意。
+		4-Formatter转换
+			 1.类型转换字符
+			     d表示x是一个整数		e表示科学计数浮点数
+				 c表示Unicode字符		x表示十六进制整数
+				 b表示Boolean值			h表示十六进制散列码	
+				 s表示是一个字符串		%表示字符“%”
+				 f表示y是一个浮点数
+			 2.类型转换
+				 char： c b s	h
+				 int：d c b s	h x
+				 BigInteger：d b s	h x
+				 double：b s f	e h
+				 对象：	  b s	h
+				 boolean：b s	h
+			 3.对于	b，只要参数类型不为null，转换永远为true
+		5-String.format()
+			 1.String.format()是一个static方法，返回一个String对象
+			 2.内部：return new Formatter().format(format, args).toString();
+			 3.一个十六进制转储工具
+			
+13.6 正则表达式
+		1-正则表达式是一种强大而灵活的文本处理工具
+			 1.处理问题：匹配，选择，编辑和验证
+			 2.split(" ");
+			 3.replaceFirst/replaceAll
+		2-创建正则表达式：java.util.regex.Pattern
+		3-量词
+			 1.贪婪型：会为所有可能的模式发现尽可能多的匹配
+			 2.勉强型：用问号来指定，满足模式所需的最少字符数
+			 3.占有型：防止回溯
+		4-要常使用括号，不然容易混淆
+		5-Pattern 和 Matcher
+		     1.Pattern中方法：
+				 Pattern.compile​(String regex)根据String类型的正则表达式生成Pattern对象
+				 matcher​(CharSequence input)使给定输入与模式匹配，生成Matcher对象				 
+				 static boolean matches​(String regex, CharSequence input)	
+											--编译给定的正则表达式，并尝试将给定的输入与其匹配。
+				 String[]	split​(CharSequence input)在此模式的匹配周围拆分给定的输入序列。
+			     String[]	split​(CharSequence input, int limit)limit限制分隔成字符串的数量
+			 2.Matcher中方法：
+			     find()查找存不存在
+				 find​(int start)从指定的索引开始查找与模式匹配的输入序列的下一个子序列。
+				 group():获取刚才查找过的数据,返回String类型，包含0组
+				 group​(int group)：根据索引返回组数
+				 
+				 start()用来返回匹配串的一个起始索引整数值
+				 end()用来返回最后字符的索引加一的值
+				 
+				 int groupCount()	返回此匹配器模式中的捕获组数。不包含0组
+				 boolean lookingAt()只要输入的第一部分匹配就会成功
+				 boolean matches()	只有整个输入都匹配正则表达式时才成功
+			 3.接口CharSequence的实现类：CharBuffer, Segment, String, StringBuffer, StringBuilder
+			 4.在输入字符串中，\n,空格和逗号是等同分隔符的作用，对应正则表达式中的组
+			 5.组是用括号划分的正则表达式
+			 6.Pattern标记：static Pattern	compile​(String regex, int flags)	
+									 --将给定的正则表达式编译为带有给定标志的模式。
+				 Pattern类中的常量；
+					 public static final int CASE_INSENSITIVE = 0x02;启用不区分大小写的匹配，基于Unicode。
+					 public static final int MULTILINE = 0x08;	启用多行模式,^和$匹配开始和结束。
+					 public static final int COMMENTS = 0x04;	允许空格和模式注释#开头将被忽略。
+					 public static final int DOTALL = 0x20;		表达式"."匹配所有字符，包括行终结符
+		6-替换操作
+		     String：
+			 1.public String replaceFirst​(String regex, String replacement)用给定的替换项替换与给定的正则表达式匹配的此字符串的第一个子字符串。
+			 2.String replaceAll​(String regex, String replacement)用给定的替换项替换该字符串中与给定的正则表达式匹配的每个子字符串。
+			 Matcher：
+			 1.String replaceAll​(String replacement)用给定的替换字符串替换与模式匹配的输入序列的每个子序列。
+			 2.String replaceFirst​(String replacement)	用给定的替换字符串替换与该模式匹配的输入序列的第一个子序列。
+			 3.public Matcher appendReplacement(StringBuffer sb, String replacement)实现一个非终端的附加和替换步骤。
+			 4.StringBuffer	appendTail​(StringBuffer sb)实现一个终端附加和替换步骤。
+			 5.Matcher reset()重置此匹配器。
+			 6.Matcher reset​(CharSequence input)用新的输入序列重置此匹配器。
+		7-正则表达式与JavaI/O
+			 
+13.7 扫描输入
+		1-BufferedReader中的readLine()方法将一行输入转化为String对象
+		2-Scanner的构造器可以接受File，InputStream ，String，Path，ReadableByteChannel，Readable
+		3-方法：
+			 1.String next()查找返回下一个String，所有的基本类型(除了char)都有对应的next()方法 
+			   String next​(String pattern)如果它匹配从指定字符串构造的模式，则返回下一个标记。
+			 2.boolean hasNext()判断是否有下一个，所有的基本类型(除了char)都有对应的next()方法
+			   boolean hasNext​(String pattern)如果下一个标记与从指定字符串构造的模式匹配，则返回true。
+			 3.MatchResult match()	返回此扫描仪上次扫描操作的匹配结果。
+		4-Scanner定界符：通过空白字符对输入进行分词
+			 public Scanner useDelimiter(String pattern)设置定界符
+									
+13.8 StringTokenizer
+		1-在使用正则表达式和Scanner之前使用StringTokenizer
+		
+13.9 总结
+
+

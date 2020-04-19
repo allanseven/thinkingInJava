@@ -1,0 +1,302 @@
+第18章 Java I/O系统
+
+18.1 File类
+	 1-File类既能代表一个特定文件的名称，又能代表一个目录下的一组文件的名称
+	 2-目录列表器
+		 1.File类中String[] list(FilenameFilter filter)
+		 2.实现FilenameFilter接口中boolean accept(File dir, String name)方法
+		 3.目录帅选：
+			public DirFilter(String regex) {
+				pattern = Pattern.compile(regex);				
+			  }
+			public boolean accept(File dir, String name) {
+				return pattern.matcher(name).matches();
+			  }
+			list方法会为此目录对象下的每个文件名调用accept(),来判断该文件是否包含在内
+		 4.匿名内部类修改目录帅选
+			FilenameFilter filter(final String regex) {
+			  return new FilenameFilter() {
+			    private Pattern pattern = Pattern.compile(regex);
+				  public boolean accept(File dir, String name) {
+					return pattern.matcher(name).matches();
+				  }
+	 3-目录实用工具
+		 1.生成文件集：File[] listFiles(FilenameFilter filter)中File.list();
+		 2.File getCanonicalFile()--返回此抽象路径名的规范形式。
+		 3.boolean isDirectory()--测试此抽象路径名表示的文件是否为目录。
+		 4-boolean isFile()--测试此抽象路径名表示的文件是否为普通文件
+	 4-目录的检查与创建
+		 1.用File对象来创建新的目录或尚不存在的整个目录路径
+		 2.boolean renameTo(File dest)--重命名此抽象路径名表示的文件。
+		 3.boolean exists()--测试此抽象路径名表示的文件或目录是否存在
+		 4.boolean mkdirs()--创建以此抽象路径名命名的目录，包括任何必需但不存在的父目录。
+		 5-boolean canRead()/canWrite()--可以读取和修改此抽象路径名表示的文件
+		 6-getName()--文件或目录的名称。
+		 7-getParent()--返回此抽象路径名的父级的路径名字符串/没有返回null
+		 8-getPath()--将此抽象路径名转换为路径名字符串。
+		 9-long lastModified()--返回此抽象路径名表示的文件的最后修改时间。
+18.2 输入和输出
+	 1-输入流: InputStream --用来表示不同数据源产生输入的类
+		 1.数据源：字节数组，String对象，文件，管道，序列
+		 2.每种数据源都有对应的InputStream子类
+		 3.FilterInputStream/FilterOutputStream过滤流，为装饰器类提供基类
+	   输出流：OutputStream --该类别的类决定了输出所要去往的目标
+		 1.目标：字节数组，文件，管道
+	 
+18.3 添加属性和有用的接口
+	 1-通过FilterInputStream从InputStream读取数据
+		 1.FilterInputStream能完成两件完全不同的事情
+		 2.DataInputStream允许读取不同的基本类型数据以及String对象
+	 2-通过FilterOutputStream从OutputStream写入数据
+		 1.DataOutputStream
+		 2.PrintStream字节打印流
+		 3.BufferedOutputStream字节缓冲区流
+18.4 Reader和Writer
+	 1-InputStreamReader可以把InputStream转化为Reader
+		 1.为适应16位的Unicode字符国际化
+	 2-数据的来源和去处
+		 1.两个继承体系一一对应
+		    InputStream--Reader
+		   OutputStream--Writer
+	 3-更改流的行为
+		 1.BufferedReader不是FilterReader的子类
+		 2.实用readLine()，不应该实用DataInputStream，而应该实用BufferedReader类
+		 3.PrintWriter的构造器既能接受Writer对象，又能接受OutputStream
+	 4-为发生变化的类1.0-1.1
+		 1-DataOutputStream，File, RandomAccessFile, SequenceInputStream
+		 
+18.5 自我独立的类：RandomAccessFile
+	 1-继承至Object
+	 2.可以在一个文件中向前和向后移动
+	 3-支持随机读和即读即写
+18.6 I/O流的典型使用方式
+	 1-缓冲输入文件
+		 1.使用BufferedReader in = new BufferedReader(new FileReader(filename));
+		   String s;
+		   StringBuilder sb = new StringBuilder();
+		 2.BufferedReader中的readLine()将换行符删除
+	 2-从内存输入
+		 1.使用StringReader(String s)类
+		 2.它的read()方法返回int类型，需转换为(char)
+	 3-格式化的内存输入
+		 1.public DataInputStream(InputStream in) {
+				super(in);
+			}
+		 2.DataInputStream in = new DataInputStream(new ByteArrayInputStream(
+				BufferedInputFile.read("src\\io\\FormattedMemoryInput.java").getBytes()));
+		 3.final byte readByte()--一次一个字节的读取一个字符，无法用来检测输入是否结束
+			int ch = in.read();
+			if (ch < 0)
+            throw new EOFException();
+		 4.int available()--如果返回值为0，则表示没有值
+	 4-基本的文件输出
+		 1.PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(file)));
+			 PrintWriter (Writer out)
+		 2.文本文件输出的快捷方式
+			 PrintWriter(String fileName)--PrintWriter out = new PrintWriter(file);
+	 5-存储和恢复数据
+		 1.使用DataOutputStream/DataInputStream面向字节
+		 2.无论读和写的平台不同
+		 3.写字符串并且让DataInputStream能够恢复它的唯一可靠的做法是使用UTF-8编码--writeUTF/readUTF
+		 4.读取位置要和写入位置一一对应
+	 6-读取随机访问文件
+		 1.RandomAccessFile
+		 2. --r: 以只读方式打开
+			--rw：打开以便读取和写入
+	     3.获取和改变文件指针的位置--seek()
+	 7-管道流
+		 1.PipedInputStream/PipedOutputStream/PipedWriter/PipedReader
+18.7 文件读写的实用工具
+	 1-read: BufferedReader  
+	   write: PrintWriter
+	 2-读取二进制文件
+		 1.BufferedInputStream bf = new BufferedInputStream(new FileInputStream(bFile));
+		 2.bf.available()方法产生数组大小
+18.8 标准I/O
+	 1-标准输入--System.in--原始InputStream，读取前必须包装
+	   标准输出--System.out--包装成PrintStream
+	   标准错误--System.err--包装成PrintStream
+	 2-从标准输入中读取--System.in
+		 1.BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
+	 3-将System.out转换成PrintWriter
+		 1.PrintWriter out = new PrintWriter(System.out, true);//开启清空功能
+	 4-标准I/O重定向
+		 1. System.setIn(in);
+			System.setOut(out);
+			System.setErr(out);
+		 2.I/O重定向操作的是字节流，而不是字符流
+18.9 进程控制
+	 1-进程控制类Process process =new ProcessBuilder(command.split(" ")).start();
+	 2-InputStream getInputStream()--返回连接到流程正常输出的输入流。
+	 3-InputStream	getErrorStream()--返回连接到流程错误输出的输入流。
+	 4-OutputStream	getOutputStream()--返回连接到流程正常输入的输出流。
+	 
+18.10 新I/O
+	 1-1.4版本引入nio，为提高速度--通道和缓冲器
+	 2-我们与缓冲器交互，不直接与通道交互
+	 3-唯一直接与通道交互的缓冲器是 ByteBuffer--可存储未加工字节的缓冲器
+		创建ByteBuffer对象：
+		 1.ByteBuffer bb = ByteBuffer.allocate(data.length * 2);
+		 2.ByteBuffer bb = ByteBuffer.wrap(new byte[]{ 0, 0, 0, 0, 0, 0, 0, 'a' });
+	 4-用来产生FileChannel
+		 1.new FileOutputStream("data.txt").getChannel();
+		   new RandomAccessFile("data.txt", "rw").getChannel();
+		   new FileInputStream("data.txt").getChannel();
+		 2.将字节存入ByteBuffer put​(byte b)/wrap(byte[] array)将已存在的字节数组存入
+		 3.FileChannel position(long newPosition)--设置此通道的文件位置。
+		 4.对于只读操作，使用静态的allocate(int capacity)来产生ByteBuffer对象
+		 5.FileChannel使用read方法读取ByteBuffer之后，必须调用Buffer中的flip()--翻转此缓冲区
+		   write方法之后，必须调用clear()--清除此缓冲区
+		 6.long transferTo/transferFrom(long position, long count,WritableByteChannel target)--将两个通道连接
+	 5-转换数据
+		 1.ByteBuffer中CharBuffer asCharBuffer()
+		   fc.write(ByteBuffer.wrap("Some text".getBytes()));--默认读取不行
+		   
+		   String encoding = System.getProperty("file.encoding");
+		   Charset.forName(encoding).decode(buff)实现转换数据
+		   
+		   fc.write(ByteBuffer.wrap("Some text".getBytes("UTF-16BE")));--UTF-16BE可以
+		   buff.asCharBuffer().put("Some text");--Some text[][][]有多余0的字节默认输出
+		 2.Buffer rewind()--倒带此缓冲区。
+	 6-获取基本类型
+		 1.bb.asCharBuffer().put("Howdy!");--bb.getChar()
+		 2.bb.asShortBuffer().put((short)471142);--bb.getShort()
+		 3.bb.asIntBuffer().put(99471142);--bb.getInt()
+		 4.asLongBuffer().put(99471142);--bb.getLong()
+		 5.bb.asFloatBuffer().put(99471142);--bb.getFloat()
+		 6.bb.asDoubleBuffer().put(99471142);--bb.getDouble()
+	 7-视图缓冲器
+		 1.通过某个特定的基本数据类型的视窗查看底层的ByteBuffer
+		 2.put/get--设置和获取
+		   get在此缓冲区的当前位置读取char，然后递增该位置。
+		   put将给定的char写入当前位置的此缓冲区中，然后递增该位置。
+		 3.字节存放次序
+		    高位优先：将最重要的字节存放在地址最低的存储器单元
+			低位优先：将最重要的字节存放在地址最高的存储器单元
+			ByteBuffer--高位优先
+		 4.设置存放模式
+		    bb.order(ByteOrder.BIG_ENDIAN);--高位优先
+			bb.order(ByteOrder.LITTLE_ENDIAN);--低位优先
+	 8-用缓冲器操作数据
+		 1.ByteBuffer.wrap(new byte[12]);--包装字节数组
+		 2.用 FileChannel fc = new FileOutputStream("data.txt").getChannel();--打开通道
+		 3.用 fc.write(ByteBuffer.wrap("Some text ".getBytes()));--写入通道
+		 4.ByteBuffer进出通道的唯一方式，只能创建一个独立的基本类型缓冲器或as...
+	 9-缓冲器的细节
+		 1.Buffer 由数据和可以高效的访问及操作数据的四个索引组成：
+			private int mark = -1;    	--标记
+			private int position = 0;	--位置
+			private int limit;			--界限
+			private int capacity;		--容量
+		 2.Buffer方法
+			Object	array()	返回支持此缓冲区的数组  
+			int	capacity()	返回此缓冲区的容量。
+			Buffer	clear()	清除此缓冲区
+			Buffer	flip()	翻转此缓冲区。
+			boolean	hasRemaining()	告诉当前位置和极限之间是否有任何元素。
+			int	limit()	返回此缓冲区的限制。
+			Buffer	limit​(int newLimit)	设置此缓冲区的限制。
+			Buffer	mark()	将此缓冲区的标记设置在其位置。
+			int	position()	返回此缓冲区的位置。
+			Buffer	position​(int newPosition)	设置此缓冲区的位置。
+			int	remaining()	返回当前位置和限制之间的元素数。
+			Buffer	rewind()	重置position/mark为默认值。
+			Buffer	reset()将该缓冲区的位置重置为标记的位置。
+			ByteBuffer	slice()	创建一个新的字节缓冲区，其内容是该缓冲区内容的共享子序列。
+	 10-内存映射文件
+		 1.内存映射文件允许我们创建和修改那些因为太大而不能放入内存的文件
+			MappedByteBuffer是继承ByteBuffer的直接缓冲器
+		    MappedByteBuffer out = new RandomAccessFile("test.dat", "rw").getChannel()
+									.map(FileChannel.MapMode.READ_WRITE, 0, length);
+		 2.具有ByteBuffer的所有方法，如put和get方法
+		 3.性能：与直接使用IO流，效率更高
+	 11-文件加锁
+		 1.FileChannel调用tryLock()/lock()，就可以获得整个文件的FileLock
+		   FileLock fl = fos.getChannel().tryLock();
+		 2.tryLock()非阻塞式，lock()阻塞式
+		 3.FileChannel调用release()可释放锁
+		 4.部分上锁
+			 tryLock(long position, long size, boolean shared)
+			 lock(long position, long size, boolean shared)
+			 加锁区域由size-position决定，shared指是否共享锁
+		 5.对映射文件的部分加锁
+			 我们不能获得缓冲器上的锁，只能是通道上的
+18.11 压缩
+	 1-压缩格式的数据流是字节流继承体系中FilterOutputStream的子类，ZIP和GZIP是常用的压缩算法
+	 2-用GZIP进行简单压缩：单个数据流
+		 BufferedReader in2 = new BufferedReader(new InputStreamReader(new GZIPInputStream(
+							  new FileInputStream("test.gz"))));
+	 3-用ZIP进行多文件保存
+		 1.void	putNextEntry​(ZipEntry e) 开始写入新的ZIP文件条目，并将流定位到条目数据的开头。
+		   每一个要加入压缩文档的文件，都要调用putNextEntry，并传递入一个ZipEntry参数
+		 2.CheckedInputStream/CheckedOutputStream都支持Adler32和CRC32两种类型的校验和，但ZipEntry类只支持CRC的接口
+		   --验证数据的完整性
+		 3.ZipInputStream使用getNextEntry()返回ZipEntry
+		   或利用ZipFile对象调用Enumeration<? extends ZipEntry>	entries()	返回ZIP文件条目的枚举。
+		 4.void	setComment​(String comment)	设置ZIP文件注释。但无法恢复
+	 4-Java档案文件
+		 1.jar文件跨平台
+		 2.在Eclipse中直接导出
+18.12 对象序列化
+	 1-当程序不运行的情况下对象仍然存在并保存其信息--声明对象序列化Serializable
+	   将对象转化为字节序列--轻量级持久性
+	 2-支持两种主要特性
+		 1.Java的远程方法调用
+		 2.当向远程对象发送消息时，通过对象序列化来传递参数和返回值
+	 3-ObjectOutputStream 调用writeObject将对象序列化
+	     1.读取字符串String s = (String)in.readObject();
+	     2.写入字符串out.writeObject("Worm storage\n");
+		 也可用DataOutputStream相同的方法写入所有基本类型
+		 读写文件和读写字节数组
+		 3.ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("worm.out"));
+		 4.ByteArrayOutputStream bout =new ByteArrayOutputStream();
+		   ObjectOutputStream out2 = new ObjectOutputStream(bout);
+		 5.还原的过程没有调用任何构造器，包括默认
+	 4-寻找类
+		 1.ObjectInputStream in = new ObjectInputStream(new FileInputStream(new File(".", "X.file")));
+		   Object mystery = in.readObject();
+	 5-序列化的控制
+		 1.实现的是Externalizable接口来对序列化过程进行控制
+		 2.继承自Serializable
+		 3.readExternal​(ObjectInput in)和writeExternal​(ObjectOutput out)在序列化和反序列化中被自动调用
+		 4.还原的过程会调用默认构造器--必须是public
+		 5.必须在readExternal和writeExternal​中调用writeObject/writeInt等方法写入与readObject/readInt读取
+		 6.transient关键字,在Serializable中修饰的字段是不会被序列化的。
+		 7.如果不使用Externalizable，可以通过Serializable，添加private void writeObject和readObject
+						-- private void readObject(ObjectInputStream stream)
+						-- private void writeObject(ObjectOutputStream stream)
+		   可以通过ObjectInputStream/ObjectOutputStream的writeObject和readObject调用对象添加的writeObject和readObject
+		   可以在自定义的writeObject和readObject中调用defaultWriteObject来实现默认的writeObject和readObject
+		 8.版本控制
+			 1.
+	 6-使用持久性
+		 1.通过容器存放对象，该对象又包含其他对象
+			 List<Animal> animals = new ArrayList<Animal>();
+				animals.add(new Animal("Bosco the dog", house));
+				animals.add(new Animal("Ralph the hamster", house));
+				animals.add(new Animal("Molly the cat", house));
+		    多次writeObject写入多个对象
+		 2.static字段是不会被序列化的，必须手动写入和读取
+18.13 XML
+	 1-XML格式可以在不同的平台
+		 1.XML中的对象Element
+		 Element root = new Element("people");
+		 for(Person p : people)
+			 root.appendChild(p.getXML());
+18.14 Preferences
+	 1-Preferences是一个键值集合，存储在一个节点层次结构中
+	 2-Preferences prefs = Preferences
+      .userNodeForPackage(PreferencesDemo.class);
+	  PreferencesDemo.class在静态main中表示当前节点
+	  在非静态中，使用getClass()
+	 3-加入put/putInt/putBoolean
+	   根据键获取值getInt/get
+18.15 总结
+
+
+
+
+
+
+
+

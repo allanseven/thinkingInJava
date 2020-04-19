@@ -1,0 +1,111 @@
+第19章 枚举类型
+
+19.1 基本enum特性
+	 1-关键字enum可以将一组具名的值的有限集合创建为一种新的类型，可以作为程序的组件使用
+	 2-values()返回enum的实例数组，
+		   通过javap反编译enum枚举类，可以看到编译器在对enum处理时，实际上是转换成了Enum的一个子类来实现的，
+		   里面可以看到有values()静态方法的声明。
+		   int	ordinal()	返回此枚举常量的序数（其在枚举声明中的位置，其中初始常量的序数为零）。
+		   int	compareTo​(E o)	将此枚举与指定对象的顺序进行比较。
+		   boolean	equals​(Object other)	如果指定对象等于此枚举常量，则返回true。
+		   可以直接使用==比较enum的实例，编译器会自动提供equals和hashCode()方法
+		   Class<E>	getDeclaringClass()	返回与此枚举常量的枚举类型相对应的Class对象。
+		   name()返回enum的实例名称，和	toString()相同
+		   static <T extends Enum<T>> T	valueOf​(Class<T> enumType, String name)	
+									--返回具有指定名称的指定枚举类型的枚举常量
+	 3-将静态导入用于 enum
+		 1.import static enumerated.Spiciness.*; --静态导入
+		 2.好处无需再用enum类型来修饰enum实例
+		 3.在定义enum的同一个文件中，无法使用
+		   同样，在默认包中定义的enum也无法使用
+	 4-特点：
+	     1.枚举类的对象默认都是public static final
+　　　　 2.枚举类的构造器都是private,所以无法在外部创建其实例，这也决定了枚举类实例的个数的确定性（写了几个就是几个）。
+　　　　 3.enum类不可被继承。
+		 4.enum类默认extends java.lang.Enum,所以无法再继承其他类
+		 5.不是所有的枚举类都使用final修饰，抽象枚举类使用abstract修饰
+		 6.当在enum类中创建匿名子类对象的时候，在运行时，会将Season编译为一个.class文件，没有final修饰：
+			 SPRING{
+					public void show(){
+						System.out.println("I'm Spring");
+					}
+				}
+		   当enum类中没有匿名子类对象时，对应的class就是final的：
+
+19.2 向enum中添加新方法
+	 1-除了不能继承自一个enum之外，可以将enum看作一个常规的类
+	 2-先定义实例，用分号;结束，再开始定义方法
+	 3-把构造器声明为private，无影响
+	 4-覆盖enum中的方法
+		 1.覆盖toString()与一般方法一样
+19.3 switch语句中的enum
+	 1-在case语句中不用enum类型来修饰enum实例
+19.4 values()的神秘之处
+	 1-编译器自动新增values()和valueOf(java.lang.String)
+	 2-enum类被final修饰
+	 3-T[]	getEnumConstants()	返回此枚举类的元素；如果此Class对象不表示枚举类型，则返回null。
+	   不是枚举的类也可以调用此方法Integer.class.getEnumConstants()，但返回null，
+	   报异常--java.lang.NullPointerException
+19.5 实现，而非继承
+	 1-enum类默认extends java.lang.Enum,所以无法再继承其他类，只能实现接口
+19.6 随机选取
+	 1-   private static Random rand = new Random(47);
+		  public static <T extends Enum<T>> T random(Class<T> ec) {
+			return random(ec.getEnumConstants());
+		  }
+		  public static <T> T random(T[] values) {
+			return values[rand.nextInt(values.length)];
+		  }
+	 
+19.7 使用接口组织枚举
+	 1-在一个接口内部，创建实现该接口的枚举，以此将枚举元素进行分类分组
+	 2-enum类包含内部接口类及指向接口枚举类的枚举常量，接口中包含实现该接口的enum类
+19.8 使用EnumSet替代标志--唯一性
+	 1-EnumSet中的元素来自一个enum，EnumSet的基础是64位long，可以在必要的时候新增一个long的容量
+	 2-EnumSet<AlarmPoints> points = EnumSet.noneOf(AlarmPoints.class);
+	 3-add/addAll添加
+	 4-<E extends Enum<E>> EnumSet<E> of--可变参数范围2-5
+	 
+19.9 使用EnumMap
+	 1-EnumMap的键必须是来自一个enum，EnumMap的内部由数组实现
+	 2-EnumMap<AlarmPoints,Command> em = new EnumMap<AlarmPoints,Command>(AlarmPoints.class);
+	 3-如果没有调用put方法放入值，值将默认为null
+19.10 常量相关的方法
+	 1-为enum定义一个或多个abstract方法，然后为每个enum实例实现该抽象方法--表驱动的代码
+	 2-编译器不允许我们将enum实例当作class类型--enum实例是static final，无法访问外部类的非static元素或方法
+	 3-使用enum的职责链
+		 1.以多种不同的方式来解决一个问题，然后将它们链接起来
+	 4-使用enum的状态机
+		 1.一个状态机可以具有有限个特定的状态，它通常根据输入，从一个状态转移到另一个状态/瞬时状态
+19.11 多路分发
+	 1-Java只支持单路分发--如果执行的操作包含不止一个类型未知的对象时，Java的动态绑定机制只能处理其中的一个类型
+	 2-通过实现同一个接口的方式实现多路分发--两次都是实际的方法调用
+	 3-使用enum分发
+		 1.通过使用构造器来初始化每个enum实例
+		 2.第一次分发是实际的方法调用，第二次分发使用的是switch
+	 4-使用常量相关的方法
+	     1.比使用enum分发代码不简洁
+	 5-使用EnumMap分发
+		 1.能真正实现两路分发
+	 6-使用二维数组
+19.12 总结
+	 1-枚举使代码更优雅和清晰
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,42 @@
+第4章 控制执行流程
+
+4.1 true和false
+		1-所有的条件语句都利用条件表达式的真或假来决定执行路径
+		2-在Java中不允许使用数值来作为布尔值使用
+		
+4.2 if-else
+		1-if-else语句是控制程序流程的最基本形式。
+		2-if-else if-else...
+		
+4.3 迭代
+		1-while，do...while，for语句--迭代语句
+		2-do...while循环至少执行一次循环体
+		
+4.4 Foreach语法
+		1-语法：		
+				for(元素的数据类型 变量名 : 数组或者Collection集合的对象) {
+					使用该变量即可，该变量其实就是数组或者集合中的元素。
+				}		
+4.5 return
+		1-用途：
+			 1.指定一个方法的返回值
+			 2.导致方法退出，返回值
+		2-在void方法中，如果没有return语句，在结尾处会有一个隐式return
+		
+4.6 break 和 continue
+		1-break和continue控制循环语句
+		     1.break强制退出循环
+			 2.continue停止当前循环，退回循环起始，开始下一次循环
+		
+4.7 臭名昭著的“goto”
+		1-goto是Java中的一个保留字，Java没有goto关键字
+		2-标签是后面更有冒号的表示符
+		     nc: 
+4.8 switch
+		1-switch选择语句
+		
+4.9 总结
+
+
+
+

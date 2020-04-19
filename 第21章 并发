@@ -1,0 +1,419 @@
+第21章 并发
+
+21.1 并发的多面性
+	 1-并发编程可以使程序执行速度得到极大提升，或者为设计某些类型的程序提供更易用的模型
+	 2-并发解决的问题分：速度和设计可管理性
+		 1.更快的执行--并发通常是提高运行在单处理器上的程序的性能
+		 2.阻塞，当线程阻塞，不影响程序正常运行
+		 3.示例：事件驱动的编程
+		 4.实现并发最直接的方式是在操作系统级别使用进程
+	 3-改进代码设计
+		 1.协作多线程--每个任务都会自动放弃控制，需插入让步语句
+		   Java的线程机制是抢占式的
+		 2.并发需要付出复杂性的代价
+	
+21.2 基本的线程机制
+	 1-定义任务
+		 1.自定义类实现Runnable接口并重写run()方法
+		 2.创建Thread类的对象，并把自定义类对象做构造参数传递
+			 Thread对象的start()方法为该线程执行必要的初始化操作，然后调用Runnable的run()方法，启动该任务
+			 start()迅速返回，并继续执行接下来的操作，同时执行自定义类中的run()方法
+	 2-使用Executors
+		 1.在java.util.concurrent包中的执行器Executor(接口,仅有void execute(Runnable command);方法)管理Thread对象，
+		   简化并发编程
+		 2.Executor管理异步任务的执行，而无需显示的管理线程的生命周期
+		 3.ExecutorService是具有服务生命周期的Executor
+			 --ExecutorService exec = Executors.newCachedThreadPool();创建一个可缓存的线程池
+			 --ExecutorService newCachedThreadPool(ThreadFactory threadFactory)--创建工厂类线程
+			 --newFixedThreadPool(int nTreads)：创建固定大小的线程池
+			 --newSingleThreadExecutor()：创建一个单线程的线程池，当多个任务提交时，按提交顺序有序完成
+			 --static ScheduledExecutorService	newScheduledThreadPool​(int corePoolSize)	
+									--创建一个线程池，该线程池可以安排命令在给定的延迟后运行或定期执行。
+			 --public void execute(Runnable command) 提交线程任务
+			 --shutdown():线程池处于SHUTDOWN状态，此时线程池不能够接受新的任务，它会等待所有任务执行完毕；
+			 --shutdownNow():线程池处于STOP状态，此时线程池不能接受新的任务，并且会去尝试终止正在执行的任务；
+			 --boolean	awaitTermination​(long timeout, TimeUnit unit)	
+							阻塞直到关闭请求后所有任务完成执行，或者发生超时，或者当前线程被中断（以先发生的为准）。
+	 3-从任务中产生返回值
+		 1.实现Runnable接口不返回值，而实现Callable接口返回值
+		 2.submit(Runnable task)/submit(Callable<T> task)提交线程任务，返回Future对象
+		 3.Callable<K>的泛型是call()方法的返回值类型
+				  java.util.concurrent.Callable是一个泛型接口，只有一个call()方法
+				  call()方法抛出异常Exception异常，且返回一个指定的泛型类对象
+		 4.boolean	isDone()	返回true此任务是否完成。
+			 V	       get()	必要时等待计算完成，然后检索其结果。
+			 如果没有使用isDone()进行检查直接调用get()，get()将阻塞，直到结果准备就绪
+	 4-休眠
+		 1.TimeUnit中的void sleep(long timeout)--线程休眠，在指定的毫秒数内让当前正在执行的线程休眠（暂停执行）
+	 5-优先级
+		 1.public final int getPriority()--返回线程对象的优先级
+		   public final void setPriority(int newPriority)--更改线程对象的优先级
+		 2.设置优先级MIN_PRIORITY = 1;/NORM_PRIORITY = 5;/MAX_PRIORITY = 10;
+     6-让步
+		 1.yield()--暂停当前正在执行的线程对象，并执行其他同级线程。
+	 7-后台线程
+		 1.指在程序运行的时候，在后台提供一种通用服务的线程，这种线程不属于程序中不可或缺的部分
+		   当运行的唯一线程都是守护程序线程时，Java虚拟机将退出
+		 2.必须在启动(start)线程之前调用此方法。
+		 3.接口类ThreadFactory，可实现该接口中的newThread方法
+		    public Thread newThread(Runnable r) {
+				Thread t = new Thread(r);
+				t.setDaemon(true);//设置后台线程
+				return t;
+			  }
+		 4.isDaemon()测试此线程是否是后台线程。
+		 5.如果是一个后台线程，那么它创建的任何线程将被设置为后台线程
+		 6.如果主线程结束较快，后台线程中的finally不一定可以执行
+	 8-编码的变体
+		 1.通过继承Thread类，并重写（override）run()方法实现线程任务
+		 2.通过Thread(String name)构造器赋予线程具体的名称
+		   通过getName()获取名称
+		 3.自管理的Runnable--先实现Runnable接口
+			private Thread t = new Thread(this);  //把自己放入Thread线程
+			public SelfManaged() { t.start(); }   //开启，但另一个任务可能在构造器结束前开始执行，访问不稳定
+		 4.通过使用内部类来将线程代码隐藏在类中
+			方式1：通过内部类继承Thread，由public的外部类构造器初始化private的内部类对象
+			方式2：定义private的Thread对象引用，在构造器中通过匿名内部类的形式，多态的方式指向Thread引用
+			方式3：通过内部类实现Runnable接口，同方式1
+			方式4：同方式2，t = new Thread(new Runnable() {
+			方式5：在方法内部创建线程--通过匿名内部类的形式
+	 9-术语
+		 1.线程不是任务
+		 2.将要执行的工作--任务
+		   驱动任务的具体机制--线程
+	 10-加入一个线程
+		 1.public final void join() throws InterruptedException
+		     --线程加入，等待调用该方法的线程终止其他线程才能执行
+		 2.interrupt()-中断线程，常常被用来终止“阻塞状态”线程。抛出一个异常
+		 3.当调用join()的线程中断或正常结束，被加入的线程也将同时结束
+	 11-创建有响应的用户界面
+		 1.通过继承Thread类，并重写（override）run，并在构造器中设置为后台线程
+		 2.System.in.read();--读取控制台输入
+	 12-线程组
+		 1.线程组持有一个线程集合
+		 2.线程组是一次不成功的尝试，忽略它
+		 3.承诺升级理论--继承错误的代价由他人承担，而承认错误的代价由自己承担
+	 13-捕获异常
+		 1.1.5版本之前，通过线程组捕获异常，1.5之后使用Executor来解决
+		 2.异常传播到run()方法的外部
+			public void run() {
+			   throw new RuntimeException();
+			}
+			该异常无法通过try/catch捕获处理
+		 3.解决方式：修改Executor产生线程的方式，为每个Thread对象附着一个异常处理器
+		    实现Thread.UncaughtExceptionHandler接口
+				--重写接口中的void uncaughtException(Thread t, Throwable e);方法
+			实现ThreadFactory接口，重写newThread方法
+			void	setUncaughtExceptionHandler​(Thread.UncaughtExceptionHandler eh)	
+				--设置当此线程由于未捕获的异常突然终止时调用的处理程序。
+			static void	setDefaultUncaughtExceptionHandler​(Thread.UncaughtExceptionHandler eh)	
+				--设置当线程由于未捕获的异常而突然终止并且没有为该线程定义其他处理程序时调用的默认处理程序。
+			Thread.UncaughtExceptionHandler	getUncaughtExceptionHandler()	
+				--返回此线程由于未捕获的异常而突然终止时调用的处理程序。	 
+21.3 共享受限资源
+	 1-不正确的访问资源
+		 1.递增不是原子性操作，不安全
+		 2.多个线程同时访问同一个资源，造成的不恰当状态
+	 2-解决共享资源竞争
+		 1.序列化访问共享资源的方案--在给定时刻只允许一个任务访问共享资源
+		 2.通过添加锁语句实现，该机制--互斥量		   
+		   共享资源以对象的形式存在，要访问的这个资源的方法标记为关键字synchronized
+		 3.所有对象都自动含有单一的锁，当在对象上调用其任意synchronized方法时，此对象都被加锁
+		 4.在并发时，将域设置为private很重要，否则，synchronized就不能防止其他任务直接访问域
+		 5.一个任务可以多次获得对象的锁--如果一个方法在同一个对象上调用第二个方法，后者又调用同一个对象上的另一方法
+		 6.针对每个类，也有一个锁--synchronized static方法可以在类的范围内防止对static数据的并发访问
+		 7.如果在你的类中有超过一个方法在处理临界数据，必须使用同步所有相关的方法
+	 3-使用显示的Lock对象
+		 1.Lock对象必须被显示地创建，锁定和释放
+			private Lock lock = new ReentrantLock();--创建
+			lock.lock();--加锁
+			try/finally中lock.unlock();--释放
+		 2.如果使用synchronized关键字，产生失败异常无法处理，而在Lock中可以通过finally维护
+		 3.用synchronized关键字不能尝试获取锁且最终获取锁会失败，或者尝试获取锁一段时间，然后放弃它
+		   ReentrantLock类实现Lock接口--允许尝试获取但最终未获取锁
+				boolean	tryLock()	仅当调用时另一个线程未持有该锁时才获取该锁。
+				boolean	tryLock​(long timeout, TimeUnit unit)如果在给定的等待时间内另一个线程未持有该锁并且当前线程尚未中断，则获取该锁。
+				void	lockInterruptibly()	除非当前线程被中断，否则获取锁 。
+		 4.原子性和易变性
+			 1.原子操作是不能被线程调用机制中断的操作
+			 2.原子性可以应用于除long和double之外的所有基本类型之上的简单操作
+			 3.在定义long和double变量时，使用volatile关键字可以通过“内存屏障”来防止指令被重排序
+			   对于64位的long和double，如果没有被volatile修饰，那么对其操作可以不是原子的。
+			   在操作的时候，可以分成两步，每次对32位操作。
+			 4.一个任务做出修改，即使在不中断的意义上讲是原子性的，对其他任务也可能是不可视的，因此不同的任务对应用的状态有不同的视图
+			   而同步机制强调在处理器系统中，一个任务做出的修改必须在应用中是可视的
+		 5.使用volatile而不是synchronized的唯一安全的情况是类中只有一个可变的域
+			 1什么是原子性操作：对域中的值做赋值和返回操作通常都是原子性
+			 2一个域被多个任务同时访问，定义为volatile，告诉编译器对访问该变量的代码就不再进行优化，从而可以提供对特殊地址的稳定访问
+	 4-原子类
+	 · 	 1.原子性变量类：
+			 class AtomicInteger extends Number implements Serializable
+			 class AtomicLong extends Number implements Serializable
+			 class AtomicReference<V> extends Object implements Serializable
+	     2.原子性更新条件：public final boolean compareAndSet(int expect, int update)
+		     int incrementAndGet() 以原子方式增加当前值，并具有所指定的记忆效果VarHandle.getAndAdd(java.lang.Object...)。
+			 int decrementAndGet() 以原子方式递减当前值，并具有所指定的记忆效应VarHandle.getAndAdd(java.lang.Object...)。
+			 int get() 返回当前值，具有由指定的记忆效果VarHandle.getVolatile(java.lang.Object...)。
+		 3.通过使用AtomicInteger消除synchronized关键字
+		 4.Unsafe类使Java拥有了像C语言的指针一样操作内存空间的能力，同时也带来了指针的问题。
+		   过度的使用Unsafe类会使得出错的几率变大，因此Java官方并不建议使用的，官方文档也几乎没有。
+		   Oracle正在计划从Java 9中去掉Unsafe类，如果真是如此影响就太大了。
+	 5-临界区
+		 1.防止多个线程同时访问方法内部的部分代码而不是防止整个方法--临界区/同步控制块
+		 2.对于一个非安全的类，需要在线程环境使用，可以通过组合的形式把非安全类和原子类对象组合，
+		   再通过公共synchronized的getPair方法获取非安全类成员
+		   synchronized关键字不是方法签名的组成部分
+		 3.同步控制块比整个方法同步，被访问的频率高很多
+	 6-在其他对象上同步
+		 1.在整个方法上使用synchronized(this)--当前对象
+		 2.在其他对象上同步synchronized(Object)--任意对象
+	 7-线程本地存储
+		 1.防止任务在共享资源上产生冲突的第二种方式是根除对变量的共享
+		   线程本地存储是一种自动化机制，可以为使用相同变量的每个不同的线程都创建不同的存储
+		 2.ThreadLocal对象通常当作静态域存储
+		   只能通过get()和set()访问该对象的内容
+		   ThreadLocal保证不会出现竞争条件，为每个单独的线程都分配了自己的存储
+21.4 终结任务
+	 1-装饰性花园
+		 1.用一个计数器类统计每个任务的运行数量
+		 2.使用shutdown方法等待提交的任务执行完成并后关闭线程。
+	 2-在阻塞时终结
+		 1.线程状态：新建，就绪，阻塞，死亡
+		 2.进入阻塞状态
+			 1.sleep(),wait(),等待某个输入/输出，试图在某个对象上调用其同步方法，对象锁不可用
+	 3-中断
+		 1.interrupt()可以终止被阻塞的任务
+		 2.Future中的cancel(boolean mayInterruptIfRunning);--中断由Executor启动的单个线程，设置为true，实际调用interrupt
+		 3.sleep是可中断的阻塞，IO和synchronized是不可阻塞的
+		 4.cancel可以中断任何抛出InterruptedException的调用，必须通过submit提交返回Future对象调用终止
+		 5.shutdownNow()调用之后，如果close()调用之前任务已终止，将不会执行run中的异常处理部分
+	 4-被互斥锁阻塞
+		 1.同一个任务调用同一个对象中的其他synchronized方法
+		 2.ReentrantLock上阻塞的任务中，被阻塞的调用方法可以被interrupt中断，继续运行
+		 3.使用线程来同步运行多个任务时，使用互斥锁同步两个任务的行为
+	 5-检查中断
+		 1.在try/finally语句中释放对象，可通过try/catch捕获调用sleep阻塞抛出的异常InterruptedException，退出任务
+		 
+21.5 线程之间的协作
+	 1-wait()和notifyAll()
+		 1.基于同一个对象上互斥的协作--等待唤醒机制
+		 2.wait()释放锁对象，sleep/yield不释放
+			 wait()两种形式：带毫秒的参数/不带参
+		 3.只能在同步方法和同步代码块中调用wait()/notifyAll()/notify()
+		     在非同步方法中调用这些方法，编译会通过，但有运行时异常IllegalMonitorStateException--当前线程不是拥有者
+		 4.在run中使用while来循环等待唤醒机制
+		 5.错失的信号：while循环不在同步内，导致死锁
+			 synchronized(this) {
+				 while(restaurant.meal == null)
+				 wait(); 
+			}
+	 2-notify()和notifyAll
+		 1.notify()唤醒特定的单一任务
+		 2.notifyAll因某个特定锁被调用时，只有等待这个锁的任务才会被唤醒
+	 3-生产者和消费者
+		 1.一个窗口类包含订单类，生产者和消费者类，线程池对象
+		     WaitPerson waitPerson = new WaitPerson(this);
+			 Chef chef = new Chef(this);
+		   在构造器中用线程池管理生产者和消费者类
+		 2.订单类包含一个final的订单号变量
+		   生产者和消费者类都包含通过构造器赋值的同一个窗口类对象
+		   消费者还包含一个传递给订单类的变量
+		   生产者和消费者类都包含两个同步代码块synchronized，
+		   第一个都使用this对象锁调用wait()
+		   第二个生产者和消费者相互持有对方的对象锁
+	 4-使用显示的Lock和Condition对象
+		 1.ReentrantLock/lock.newCondition生成Condition对象
+		 2.try/finally中锁
+	 5-生产者-消费者与队列
+		 1.BlockingQueue：阻塞队列
+			 不接受 null 元素
+			 可以是限定容量的
+			 实现主要用于生产者-使用者队列，但它另外还支持 Collection 接口
+			 实现是线程安全的
+		 2.子类：
+			 LinkedBlockingQueue--基于链表的阻塞队列，无界--锁个数2生产者锁和消费者锁
+			 ArrayBlockingQueue--基于数组的阻塞队列实现，固定界限--锁个数1
+			 SynchronousQueue--一种无缓冲的等待队列，类似于无中介的直接交易-锁个数1
+			 
+			 线程少 (<20) ，Queue长度短 (<30) , 使用SynchronousQueue
+			 线程多（>20），Queue长度长（>30），使用LinkedBlockingQueue
+			 一般不用，并且在插入和删除元素时会产生额外的对象
+			 
+			 LinkedBlockingQueue()创建一个LinkedBlockingQueue容量为的 Integer.MAX_VALUE。
+			 只有当队列缓冲区达到最大值缓存容量时（LinkedBlockingQueue可以通过构造函数指定该值），才会阻塞生产者队列，
+			 直到消费者从队列中消费掉一份数据，生产者线程会被唤醒，反之对于消费者这端的处理也基于同样的原理。
+			 
+		 3.吐司BlockingQueue
+			 add/remove操作失败会直接抛出异常，
+			 offer/poll操作失败会返回特殊值，还可以加时间，过了时间返回失败，
+			 put/take操作失败会阻塞。
+			 
+			 则调用BlockingQueue.take()，如果取不到值，就会一直阻塞直到程序提交了一个任务。
+			 所以，阻塞队列的作用是控制线程池中线程的生命周期。
+	 6-任务间使用管道进行输入/输出
+		 1.PipedWriter向管道写，PipedReader向管道读
+		 2.PipedReader调用read()时，如果没有更多数据，管道将阻塞
+		 3.如果对象没有构造完毕，在不同平台上管道可能产生不一致行为。
+		 4.管道与普通IO比较，是可中断的
+21.6 死锁
+	 1-某个任务在等待另一个任务，而后者又在等待别的任务，这样一直下去，直到这个链条上的任务又在等待第一个任务释放锁
+	 2-死锁发生的四个条件
+		 1.互斥条件
+		 2.至少有一个任务它必须持有一个资源且正在等待获取一个当前被别的任务持有的资源
+		 3.资源不能被任务抢占，任务必须把资源释放当作普通事件
+		 4.必须有循环等待，这时，一个任务等待其他任务所持有的资源，后者又在等待另一个任务持有的资源，，，
+		 只要破坏其中一个条件
+21.7 新类库中的构件
+	 1-java.util.concurrent.*引入大量类解决并发问题
+		 1.CountDownLatch 类被用来同步一个或多个任务，强制它们等待由其他任务执行的一组操作完成
+		   它被设计只触发一次，计数值不能重置--可重置版本 CyclicBarrier
+		   调用countDown()减少计数值
+		   调用await()会被阻塞，直到计数值为0
+		 2.典型用法：将一个程序分为n个互相独立的可解决的任务
+		   如开始任务和等待要执行的任务，在任务中组合CountDownLatch对象
+		   rand.nextInt(2000));//线程安全
+		 3.CyclicBarrier 类创建一组任务，它们并行执行工作，然后在执行下一个步骤之前等待，直到所有的任务完成
+		   并发是使仿真成为可能的一个关键因素
+		   public CyclicBarrier(int parties, Runnable barrierAction) {//Runnable是一个栅栏动作，当计数器到达0时自动执行
+		 4.DelayQueue 类是一个无界的BlockingQueue，用于放置实现了Delayed接口的对象，其中的对象只能在其到期后才能从队列中取走
+		   这种队列是有序的，即队头对象的延迟到期的时间最长
+		   优先级队列的变体
+		   poll返回null，这种队列中不能放入null
+		   long	convert​(long sourceDuration, TimeUnit sourceUnit)--TimeUnit类	
+								 将以给定单位为单位的给定持续时间转换为此单位。
+		   重写getDelay(TimeUnit unit);方法，告知延迟到期有多长时间
+		   Delayed继承Comparable接口，实现compareTo方法，产生合理的比较
+		   任务创建的顺序对执行顺序没有任何影响，任务是按照所期望的延迟顺序执行
+		 5.PriorityBlockingQueue 优先级队列，可阻塞的读取操作
+		   默认情况下元素采用自然顺序升序排列。
+		   也可以自定义类实现compareTo()方法来指定元素排序规则，
+		   或者初始化PriorityBlockingQueue时，指定构造参数Comparator来对元素进行排序。
+		   但需要注意的是不能保证同优先级元素的顺序。
+		   PriorityBlockingQueue也是基于最小二叉堆实现，
+		   使用基于CAS实现的自旋锁来控制队列的动态扩容，保证了扩容操作不会阻塞take操作的执行。
+		   通过静态内部类继承外部类的方式，在run中主动调用shutdownNow()结束任务
+	 2-使用ScheduledThreadPoolExecutor的温室控制器
+		 1-ScheduledThreadPoolExecutor方法
+			 1.ScheduledFuture<?>	schedule​(Runnable command, long delay, TimeUnit unit)	
+			   提交一键式任务，该任务在给定延迟后启用
+			 2.scheduleAtFixedRate
+			   ScheduledFuture<?>	scheduleAtFixedRate​(Runnable command, long initialDelay, long period, TimeUnit unit)	
+			   提交一个周期性操作，该操作在给定的初始延迟后首先启用，然后在给定的时间段内启用；
+			   也就是说，执行将在 initialDelay，然后initialDelay + period，
+			   然后 initialDelay + 2 * period等等之后开始。
+	 3-Semaphore
+		 1.计量信息号允许n个任务同时访问这个资源--线程池的概念
+		 2.方法
+			 Semaphore​(int permits)	创建Semaphore具有给定数量的许可证和不公平公平设置的。
+			 Semaphore​(int permits, boolean fair)	创建Semaphore具有给定数量的许可证和给定的公平性设置的。
+			 permits 初始许可数，也就是最大访问线程数
+		 　　fair 当设置为false时，创建的信号量为非公平模式；当设置为true时，信号量是公平模式
+
+			 
+			 void	release()	释放许可证，将其返回到信号灯。
+			 void	acquire()	从此信号量获取许可，直到一个可用的信号被阻塞，否则线程被中断。
+	 4-Exchanger<V>
+		 1.是两个任务之间交换对象的栅栏
+			 --一个任务生产对象，一个任务消费对象
+		 2.2个方法
+			 V	exchange​(V x)	 等待另一个线程到达此交换点（除非当前线程被中断），然后将给定对象传输到该交换点，以接收其返回的对象。
+			 V	exchange​(V x, long timeout, TimeUnit unit)	
+				 等待另一个线程到达此交换点（除非当前线程被中断或经过了指定的等待时间），然后将给定的对象传送给该对象，并返回其对象。
+		 3. ExecutorService exec = Executors.newCachedThreadPool();
+			Exchanger<List<Fat>> xc = new Exchanger<List<Fat>>();
+			
+			List<Fat>
+			  producerList = new CopyOnWriteArrayList<Fat>(),
+			  consumerList = new CopyOnWriteArrayList<Fat>();
+			
+			exec.execute(new ExchangerProducer<Fat>(xc,
+			  BasicGenerator.create(Fat.class), producerList));
+			exec.execute(
+			  new ExchangerConsumer<Fat>(xc,consumerList));
+21.8 仿真
+	 1-并发最有趣的用法
+	 2-银行出纳员仿真：对象随机出现，并且要求由数量有限的服务器提供随机数量的服务时间
+	 3-饭店仿真
+		 1.SynchronousQueue这是一个内部容量的阻塞队列，每个put都必须等待一个take
+		 2.BlockingQueue
+		 
+		 3.ReentrantReadWriteLock
+			 int	getReadLockCount()	查询为此锁持有的读取锁的数量。
+			 public ReentrantReadWriteLock.WriteLock writeLock() { return writerLock; }
+			 public ReentrantReadWriteLock.ReadLock  readLock()  { return readerLock; }
+		 4.使用队列在任务间通信所带来的管理复杂度，通过反转控制简化了并发编程的过程
+	 4-分发工作
+		 1.CyclicBarrier栏栅类拦截多个分工任务/2个LinkedBlockingQueue等待队列统计总任务数
+		   多个分工任务通过内部类的方式继承父类的方式
+21.9 性能调优
+	 1-比较各类互斥技术
+		 1.微基准测试危险--在隔离的，脱离上下文环境的情况下对某个特性进行性能测试
+		 2.使用横板方法设计模式，把公共代码放置在基类，把不同的代码隔离在导出类的抽象方法实现上
+		 3.BaseLine/SynchronizedTest/LockTest/AtomicTest
+			 开4条读写线程同时跑5万条数据时，SynchronizedTest==LockTest
+			 线程数越少，LockTest效率 >> SynchronizedTest
+						 AtomicTest == BaseLine
+			 线程数越多 SynchronizedTest==LockTest的同时，处理的数据更多
+		 4.只有一个Atomic对象时，安全
+	 2-免锁容器
+		 1.Vector和Hashtable具有很多Synchronized方法，在1.2版本之后新的容器库是不同步的，
+		   并且Collections提供各种static的同步装饰方法，同步不同类型的容器--基于Synchronized加锁机制
+		 2.对容器的修改可以与读取操作同时发生，只要读取者只能看到完成修改的结果即可 
+		 3.ConcurrentHashMap/ConcurrentLinkedQueue CopyOnWriteArrayList和CopyOnWriteArraySet		   
+	 3-乐观锁
+		 1.CopyOnWriteArrayList--读取快
+		   Collections.synchronizedList--读多和写少性能相同
+	 4-比较各种Map实现
+		 1.ConcurrentHashMap--读取快，写入数量对读取性能影响小
+		   Collections.synchronizedHashMap比较
+	 5-乐观加锁
+		 1.原子类执行原子操作
+		   boolean	compareAndSet​(int expectedValue, int newValue)	
+		   以原子方式将值设置为newValue 当前值 == expectedValue，
+		   并具有由指定的记忆效果VarHandle.compareAndSet(java.lang.Object...)。
+	 6-ReentrantReadWriteLock
+		 1.ReentrantReadWriteLock对向数据结构相对不频繁地写入，但是有多个任务要经常读取这个数据结构的这类情况进行优化
+		   如果写锁被其他任务持有，则读取者不能访问，直到写锁释放
+		 2.ReentrantReadWriteLock方法
+		   Lock wlock = lock.writeLock();写入锁
+		   Lock rlock = lock.readLock();读取锁
+		   getReadLockCount()读取锁的数量
+		 
+21.10 活动对象
+	 1-传统的多线程模型来自于过程型编程，
+	   替代方式：活动对象或行动者
+	   因为每个对象都维护者它自己的工作器线程和消息队列，并且所有对这些对象的请求都将进入队列排队，任何时刻都只能运行一个
+	   可以串行化消息而不是方法，不需要防备一个任务在其循环的中间被中断的现象
+	 2-ExecutorService ex = Executors.newSingleThreadExecutor();  产生单线程执行器维护无界阻塞队列
+	 3-<T> Future<T> submit(Callable<T> task);提交一个新的Callable对象，把方法调用转化为消息
+	 4-Future接口方法
+	   boolean	isDone() 返回true此任务是否完成。
+	   V	get() 必要时等待计算完成，然后检索其结果。
+	 5-活动对象功能：
+		 1.每个对象都拥有自己的工作器线程
+		 2.每个对象都将维护对它自己的域的全部控制权
+		 3.所有在活动对象之间的通信都将以这些对象的消息的形式发生
+		 4.对象之间的所有消息都要排队--不会发生死锁
+	 6-代理实际上是活动对象
+21.11 总结
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

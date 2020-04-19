@@ -1,0 +1,134 @@
+第11章 持有对象
+
+11.1 泛型和类型安全的容器
+		1-@SuppressWarnings注释表示不受检查的异常受抑制
+		2-通过使用泛型，在编译期将防止将错误类型的对象放置到容器中
+		3-向上转型也可以作用于泛型
+		
+11.2 基本概念
+		1-容器的用途是保存对象，两种概念：
+			 1.Collection--一个独立元素的序列
+			 2.Map--一组成对的键值对对象
+		2-容器向上转型，但不能使用子的特有功能。
+		
+11.3 添加一组元素
+		1-Collection的构造器可以接受另一个Collection，用它来讲自身初始化
+			 1.Collection.addAll只接受另一个Collection
+			 2.Arrays.asList()和 Collections.addAll()更灵活，使用可变参数列表			 
+		2-如果直接使用Arrays.asList()，当作list，底层是数组，不能增改
+
+11.4 容器的打印
+		1-容器打印无需任何帮助，直接 System.out.println
+		
+11.5 List
+		1-ArrayList查询快，增删慢。
+		2-LinkedList查询慢，增删快。
+		3-List的行为是根据equals()的行为而改变
+			 1.subList()可以在List表中截取片断
+			 2.containsAll()true如果此列表包含指定集合的​​所有元素
+			   --Collections.shuffle()和Collections.sort(): 容器中的顺序不影响
+			 3.	retainAll​(Collection<?> c)	仅保留此列表中指定集合中包含的元素
+			 4.remove()通过索引删除比通过引用删除更直观，无需考虑equals()
+			 5.removeAll()从此列表中删除指定集合中包含的所有其元素。基于equals()
+			 6.	set​(int index, E element)	用指定的元素替换此列表中指定位置的元素。
+			 7.	addAll​(int index, Collection<? extends E> c)将指定集合中的所有元素插入此列表中的指定位置。
+			 8.	isEmpty()	true如果此列表不包含任何元素，则返回。
+			 9.	clear()从此列表中删除所有元素。
+			 10.toArray()以正确的顺序（从第一个元素到最后一个元素）返回一个包含此列表中所有元素的数组。
+		
+11.6 迭代器
+		1-Java中Iterator只能单向移动
+			 1.使用Iterator()要求容器返回一个Iterator，将准备返回元素的第一个元素
+			 2.next()返回迭代中的下一个元素。
+			 3.hasNext()--如果迭代具有更多元素，则返回true。
+			 4.remove()从基础集合中移除此迭代器返回的最后一个元素。
+			     --执行remove之前，必须执行next()
+		2-接受对象容器并传递它，从而在每个对象上都执行操作
+		3-Iterator能够将遍历序列的操作与序列底层的结构分离，迭代器同一了对容器的访问方式
+		4-ListIterator是Iterator的子类，可以逆向遍历，但是要先正向遍历，只能用于各种List访问
+			 1.boolean hasprevious()返回true此列表迭代器在反向遍历列表时是否有更多元素。
+			 2.Object previous()返回列表中的上一个元素，并将光标位置向后移动。
+			 3.nextIndex()返回下一个索引
+			 4.previousIndex()返回前一个索引
+		
+11.7 LinkedList
+		1-LinkedList中的方法只是名称有些不同，但功能差不多
+			 1.element()和getFirst()完全一样--返回此列表中的第一个元素，
+			   peek()和前两种只有一点不同：在列表为空时返回null	
+			   element()在列表为空时抛异常	   
+			 2.removeFirst()和remove()完全一样--检索并删除此列表的头
+			 3.addFirst​(E e)--将指定的元素插入此列表的开头。
+			   addLast​(E e)/add​(E e)/offer​(E e)将指定的元素追加到此列表的末尾。
+			 4.removeLast()从此列表中删除并返回最后一个
+			   removeFirst()/poll()/remove()从此列表中删除并返回第一个元素。
+			   poll()在列表为空时返回null	
+			   remove()抛异常
+		
+11.8 Stack
+		1-栈指后进先出的容器--叠加栈
+		2-LinkedList能实现栈的所有功能
+		
+11.9 Set
+		1-Set不保存重复的元素
+		2-Set具有与Collection完全一样的接口，没有额外的功能，只有不同的行为
+		3-按字母序排序：new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+		
+11.10 Map
+		1-将对象映射到其他对象
+		2-扩展到多维：把值设置为其他容器
+				
+11.11 Queue
+		1-队列是一种典型的先进先出的容器，放入和取出顺序一致
+		2-LinkedList支持队列的行为，并实现了Queue接口
+		3-PriorityQueue
+			 1.优先级队列声明下一个弹出元素是最需要的元素
+			 2.调用offer​(E e)，将会默认自然排序
+			 3.element()/poll()/remove()获取的元素是优先级最高的
+			 4.空格的优先级高于字母
+			 5.Collections.reverseOrder()调用产生反序排列
+			 6.Integer/String/Character可以与PriorityQueue一起工作，因为这些类有自然排序
+		
+11.12 Collection和Iterator
+		1-Collection是所有序列容器的根接口
+		2-AbstractCollection提供Collection的默认实现
+		3-通过继承AbstractCollection抽象类，实现size()和iterator()方法，
+		  简化提供迭代器
+		
+11.13 Foreach与迭代器
+		1-用于数组和Collection对象
+			 1.Collection接口Iterable接口，接口包含生成Iterator的iterator()方法
+			   return new Iterator<String>() {
+			 2.Iterable接口被用来在Foreach中移动
+			 3.任何实现Iterable接口的类都可以使用Foreach
+			    
+		2-显示操作系统环境变量：
+			 for(Map.Entry entry: System.getenv().entrySet()) {
+			  System.out.println(entry.getKey() + ": " +
+				entry.getValue());
+			}
+			 1.System.getenv()返回一个Map
+			 2.Map.entrySet返回一个Set
+		3-数组不会自动转换为Iterable接口
+		4-适配器方法惯用法
+			 1.shuffle​(List<?> list, Random rnd)--使用指定的随机性源随机排列指定的列表。
+			 2.List<Integer> list1 = new ArrayList<Integer>(Arrays.asList(ia)); 
+			   再调用shuffle不会打乱数组
+			 3.List<Integer> list2 = Arrays.asList(ia);直接不包装使用
+			   再调用shuffle会打乱数组
+11.14 总结
+		 1.容器不会持有基本类型，但基本类型会自动转换为包装类再存储
+		 
+
+
+
+
+
+
+
+
+
+
+
+
+
+

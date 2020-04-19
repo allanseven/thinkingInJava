@@ -1,0 +1,118 @@
+第16章 数组
+
+16.1 数组为什么特殊
+		1-数组与其他容器的3种区别
+			 1.效率：数组是一种效率最高的存储和随机访问对象引用序列的方式
+			 2.类型：数组持有某种具体类型，通过编译期检查防止插入和抽取错误类型(容器通过泛型机制解决)
+			 3.保存基本类型：数据可以持有基本数据类型，(容器通过自动包装解决)
+
+16.2 数组是第一级对象
+		1-数组通过[]语法访问元素
+		  容器通过使用add和get方法
+		2-对象数组和基本类型数组
+		3-2种创建方式
+			 1.动态初始化: 数据类型[] 数据名 = new 数组类型[数组长度]
+			 2.静态初始化: 数据类型[] 数据名 = new 数组类型[]{元素1，元素2...};
+	
+16.3 返回一个数组
+		1-直接return返回一个数组
+		2-确保随机数不会重复
+				do
+				 t = rand.nextInt(FLAVORS.length);
+			    while(picked[t]);
+		
+16.4 多维数组
+		1-Arrays.deepToString(多维数组)--将多维数组转换为String
+		2-基础类型多维数组
+			int[][][] a = new int[rand.nextInt(7)][][];
+			for(int i = 0; i < a.length; i++) {
+			  a[i] = new int[rand.nextInt(5)][];
+			  for(int j = 0; j < a[i].length; j++)
+				a[i][j] = new int[rand.nextInt(5)];
+			}
+			System.out.println(Arrays.deepToString(a));
+		3-多维对象数组
+		
+16.5 数组与泛型
+		1-不能实例化具有参数化类型的数组：List<String>[] ls =  new List<String>[10];
+		  因为擦除会移除参数类型信息，而数组必须知道它们所持有的确切类型，强制保证类型安全
+		2-可以参数化数组本身的类型
+			 1.参数化类
+			class ClassParameter<T> {
+			  public T[] f(T[] arg) { return arg; }
+			}
+			 2.参数化方法
+			class MethodParameter {
+			  public static <T> T[] f(T[] arg) { return arg; }
+			}
+		3-允许创建对这种数组的引用：List<String>[] ls;
+		  通过创建非泛型数组，进行转型赋值：
+			 List[] la = new List[10];
+			 ls = (List<String>[])la;
+		4-数组是协变类型
+			 1.Object[] objects = new ArrayList<String>();
+			 2.T[] array; 
+			  // array = new T[size];   因擦除无法确定T的持有类型，
+			  array = (T[])new Object[size]; 通过创建Object，强制转换
+16.6 创建测试数据
+		1-使用Arrays.fill(数组, 数据类型);填充单一数据
+		2-数据生成器
+			 1.使用通用Generator类生成基本数据类型数据
+		3-从Generator中创建数组
+			 1.两种工具：
+				 1使用任意的Generator来产生Object子类型的数据
+				  两个版本：
+				     接受一个数组，使用Generator填充
+				     public static <T> T[] array(T[] a, Generator<T> gen) {
+					 接受一个Class对象，
+					 public static <T> T[] array(Class<T> type,Generator<T> gen, int size) {
+      
+				 2接受任意基本类型的包装器类型数组，并产生对应数组
+				     使用包装器，重载多个同名的方法对应基本类型		
+16.7 Arrays实用功能
+		1-常用功能：
+			 1.equals()：比较是否相等
+			 2.fill()：填充单一数据
+			 3.sort()：快速排序
+			 4.binarySearch():二分查找
+			 5.toString()：把数组转换为String
+			 6.hashCode()：产生数组的散列码
+			 7.asList():把数组转换为List
+		2-赋值数组
+			 1.System.arraycopy(Object src, int srcPos, Object dest, int destPos, int length)
+				 --从指定的源数组（从指定位置开始）复制数组到目标数组的指定位置。
+			 2.System.arraycopy不会自动包装和拆包
+		3-数组的比较
+			 1.数组比较的是容器中的元素
+			   Arrays.equals(a1, a2)
+		4-数组元素的比较
+			 1.使用Comparable接口中compareTo()
+			  
+			 2.Arrays.sort​(Object[] a)
+			     --根据指定比较器引发的顺序对指定对象数组进行排序。
+				 --不然报异常
+			 3.实现Comparator接口，只要比较方法：equals和compare
+			   一般不需实现equals，因为Object有
+			 4.static <T> Comparator<T>	reverseOrder()
+				 --返回一个比较器，该比较器对实现该接口的对象集合强加自然顺序的逆序Comparable。
+			 5.Arrays.sort​(T[] a, Comparator<? super T> c)
+		5-数组排序
+			 1.String根据字典排序，大写，小写区分开排序
+		6-在已排序的数组中查找
+			 1.要先排序，不然有异常
+			 2.Arrays.binarySearch(Object[] a, Object key)
+				 正值：索引
+				 负值：-插入点 -1  第一个大于查找对象的元素在数组中的位置
+			 3.如果重复无法保证查找的是哪一个，可以使用TreeSet和LinkedHashSet保证没有重复元素
+16.8 总结
+	 优先使用容器
+
+
+
+
+
+
+
+
+
+
